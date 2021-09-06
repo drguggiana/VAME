@@ -278,11 +278,9 @@ def pose_segmentation(config):
                   "To get the full picture of the spatiotemporal dynamic we recommend applying our community approach afterwards.")
             
         
-        
-        
-        
-        
-        
-        
-        
-        
+def batch_pose_segmentation(config, target_files):
+    """
+    Function to batch extract latents and cluster
+    """
+
+    return
