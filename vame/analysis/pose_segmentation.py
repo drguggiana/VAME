@@ -56,7 +56,7 @@ def load_model(cfg, model_name, legacy):
     return model
 
 
-def embedd_latent_vectors(cfg, files, model, legacy):
+def embedd_latent_vectors(cfg, files, model, legacy, data=None):
     project_path = cfg['project_path']
     temp_win = cfg['time_window']
     num_features = cfg['num_features']
@@ -67,12 +67,14 @@ def embedd_latent_vectors(cfg, files, model, legacy):
 
     for file in files:
         print('Embedd latent vector for file %s' %file)
-        data = np.load(os.path.join(project_path,'data',file,file+'-PE-seq-clean.npy'))
+        # only load the file if it's a path
+        if data is None:
+            data = np.load(os.path.join(project_path, 'data', file, file+'-PE-seq-clean.npy'))
         latent_vector_list = []
         with torch.no_grad(): 
             for i in tqdm.tqdm(range(data.shape[1] - temp_win)):
             # for i in tqdm.tqdm(range(10000)):
-                data_sample_np = data[:,i:temp_win+i].T
+                data_sample_np = data[:, i:temp_win+i].T
                 data_sample_np = np.reshape(data_sample_np, (1, temp_win, num_features))
                 h_n = model.encoder(torch.from_numpy(data_sample_np).type('torch.FloatTensor').cuda())
                 _, mu, _ = model.lmbda(h_n)
@@ -180,8 +182,8 @@ def pose_segmentation(config):
         ind_param = cfg['individual_parameterization']
         
         for folders in cfg['video_sets']:
-            if not os.path.exists(os.path.join(cfg['project_path'],"results",folders,model_name,"")):
-                os.mkdir(os.path.join(cfg['project_path'],"results",folders,model_name,""))
+            if not os.path.exists(os.path.join(cfg['project_path'], "results", folders, model_name, "")):
+                os.mkdir(os.path.join(cfg['project_path'], "results", folders, model_name, ""))
     
         files = []
         if cfg['all_data'] == 'No':
@@ -207,31 +209,34 @@ def pose_segmentation(config):
         use_gpu = torch.cuda.is_available()
         if use_gpu:
             print("Using CUDA")
-            print('GPU active:',torch.cuda.is_available())
-            print('GPU used:',torch.cuda.get_device_name(0))
+            print('GPU active:', torch.cuda.is_available())
+            print('GPU used:', torch.cuda.get_device_name(0))
         else:
             print("CUDA is not working! Attempting to use the CPU...")
             torch.device("cpu")
         
-        if not os.path.exists(os.path.join(cfg['project_path'],"results",file,model_name,'kmeans-'+str(n_cluster),"")):
+        if not os.path.exists(os.path.join(cfg['project_path'], "results", file,
+                                           model_name, 'kmeans-'+str(n_cluster), "")):
             new = True
             # print("Hello1")
             model = load_model(cfg, model_name, legacy)
             latent_vectors = embedd_latent_vectors(cfg, files, model, legacy)
 
             if ind_param == False:
-                print("For all animals the same k-Means parameterization of latent vectors is applied for %d cluster" %n_cluster)
+                print("For all animals the same k-Means parameterization of latent vectors is applied for %d cluster" % n_cluster)
                 labels, cluster_center, motif_usages = same_parameterization(cfg, files, latent_vectors, n_cluster)
             else:
-                print("Individual k-Means parameterization of latent vectors for %d cluster" %n_cluster)
-                labels, cluster_center, motif_usages = individual_parameterization(cfg, files, latent_vectors, n_cluster)
+                print("Individual k-Means parameterization of latent vectors for %d cluster" % n_cluster)
+                labels, cluster_center, motif_usages = \
+                    individual_parameterization(cfg, files, latent_vectors, n_cluster)
             
         else:
             print('\n'
                   'For model %s a latent vector embedding already exists. \n' 
-                  'Parameterization of latent vector with %d k-Means cluster' %(model_name, n_cluster))
+                  'Parameterization of latent vector with %d k-Means cluster' % (model_name, n_cluster))
             
-            if os.path.exists(os.path.join(cfg['project_path'],"results",file,model_name,'kmeans-'+str(n_cluster),"")):
+            if os.path.exists(os.path.join(cfg['project_path'], "results", file,
+                                           model_name, 'kmeans-'+str(n_cluster), "")):
                 flag = input('WARNING: A parameterization for the chosen cluster size of the model already exists! \n'
                              'Do you want to continue? A new k-Means assignment will be computed! (yes/no) ')
             else:
@@ -239,10 +244,11 @@ def pose_segmentation(config):
             
             if flag == 'yes':
                 new = True
-                path_to_latent_vector = os.path.join(cfg['project_path'],"results",file,model_name,'kmeans-'+str(n_cluster),"")
+                path_to_latent_vector = os.path.join(cfg['project_path'], "results", file,
+                                                     model_name, 'kmeans-'+str(n_cluster), "")
                 latent_vectors = []
                 for file in files:
-                    latent_vector = np.load(os.path.join(path_to_latent_vector,'latent_vector_'+file+'.npy'))
+                    latent_vector = np.load(os.path.join(path_to_latent_vector, 'latent_vector_'+file+'.npy'))
                     latent_vectors.append(latent_vector)
                     
                 if ind_param == False:
@@ -259,18 +265,20 @@ def pose_segmentation(config):
         # print("Hello2")
         if new == True:
             for idx, file in enumerate(files):
-                print(os.path.join(cfg['project_path'],"results",file,"",model_name,'kmeans-'+str(n_cluster),""))
-                if not os.path.exists(os.path.join(cfg['project_path'],"results",file,model_name,'kmeans-'+str(n_cluster),"")):                    
+                print(os.path.join(cfg['project_path'], "results", file, "", model_name, 'kmeans-'+str(n_cluster), ""))
+                if not os.path.exists(os.path.join(cfg['project_path'], "results", file, model_name,
+                                                   'kmeans-'+str(n_cluster), "")):
                     try:
-                        os.mkdir(os.path.join(cfg['project_path'],"results",file,"",model_name,'kmeans-'+str(n_cluster),""))
+                        os.mkdir(os.path.join(cfg['project_path'], "results", file, "", model_name,
+                                              'kmeans-'+str(n_cluster), ""))
                     except OSError as error:
                         print(error)   
                     
-                save_data = os.path.join(cfg['project_path'],"results",file,model_name,'kmeans-'+str(n_cluster),"")
-                np.save(os.path.join(save_data,str(n_cluster)+'_km_label_'+file), labels[idx])
-                np.save(os.path.join(save_data,'cluster_center_'+file), cluster_center[idx])
-                np.save(os.path.join(save_data,'latent_vector_'+file), latent_vectors[idx])
-                np.save(os.path.join(save_data,'motif_usage_'+file), motif_usages[idx])
+                save_data = os.path.join(cfg['project_path'], "results", file, model_name, 'kmeans-'+str(n_cluster), "")
+                np.save(os.path.join(save_data, str(n_cluster)+'_km_label_'+file), labels[idx])
+                np.save(os.path.join(save_data, 'cluster_center_'+file), cluster_center[idx])
+                np.save(os.path.join(save_data, 'latent_vector_'+file), latent_vectors[idx])
+                np.save(os.path.join(save_data, 'motif_usage_'+file), motif_usages[idx])
     
         
             print("You succesfully extracted motifs with VAME! From here, you can proceed running vame.motif_videos() "
@@ -278,9 +286,37 @@ def pose_segmentation(config):
                   "To get the full picture of the spatiotemporal dynamic we recommend applying our community approach afterwards.")
             
         
-def batch_pose_segmentation(config, target_files):
+def batch_pose_segmentation(cfg, target_files, coordinates, anchor_points=(0, 7), kmeans_obj=None):
     """
     Function to batch extract latents and cluster
     """
 
-    return
+    # load config parameters
+    legacy = cfg['legacy']
+    model_name = cfg['model_name']
+    n_cluster = cfg['n_cluster']
+    # load model
+    model = load_model(cfg, model_name, legacy)
+        
+    # remove the anchor points from the features
+    coordinates = np.delete(coordinates, anchor_points, axis=0)
+    # allocate memory for the output
+    latents_list = []
+    clusters_list = []
+    # for all the files
+    for files in target_files:
+        
+        # get latents
+        latents = embedd_latent_vectors(cfg, [files], model, legacy, data=coordinates)[0]
+
+        # get clusters
+        if kmeans_obj is not None:
+            clusters = kmeans_obj.predict(latents)
+        else:
+            clusters = []
+
+        # store
+        latents_list.append(latents)
+        clusters_list.append(clusters)
+
+    return latents_list, clusters_list

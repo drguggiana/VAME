@@ -16,6 +16,7 @@ from vame.model import create_trainset
 from vame.model import train_model
 from vame.model import evaluate_model
 from vame.analysis import pose_segmentation
+from vame.analysis import batch_pose_segmentation
 from vame.analysis import motif_videos
 from vame.analysis import community
 from vame.analysis import community_videos
@@ -26,4 +27,5 @@ from vame.util.csv_to_npy import csv_to_numpy
 from vame.util.align_egocentrical import egocentric_alignment
 from vame.util import auxiliary
 from vame.util.auxiliary import update_config
+from vame.util.auxiliary import read_config
 
