@@ -24,13 +24,14 @@ from vame.model.dataloader import SEQUENCE_DATASET
 from vame.model.rnn_model import RNN_VAE, RNN_VAE_LEGACY
 
 # make sure torch uses cuda for GPU computing
-use_gpu = torch.cuda.is_available()
-if use_gpu:
-    print("Using CUDA")
-    print('GPU active:',torch.cuda.is_available())
-    print('GPU used:',torch.cuda.get_device_name(0))
-else:
-    torch.device("cpu")
+# use_gpu = torch.cuda.is_available()
+# if use_gpu:
+#     print("Using CUDA")
+#     print('GPU active:',torch.cuda.is_available())
+#     print('GPU used:',torch.cuda.get_device_name(0))
+# else:
+use_gpu = False
+torch.device("cpu")
 
 def reconstruction_loss(x, x_tilde, reduction):
     mse_loss = nn.MSELoss(reduction=reduction)

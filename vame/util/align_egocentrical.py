@@ -11,7 +11,9 @@ import os
 import cv2 as cv
 import numpy as np
 import pandas as pd
-import tqdm    
+import tqdm
+import sklearn
+from scipy.signal import medfilt
 
 from pathlib import Path
 from vame.util.auxiliary import read_config  
@@ -337,7 +339,7 @@ def alignment(path_to_file, filename, pose_ref_index, video_format,
 
 def egocentric_alignment(config, pose_ref_index=[0, 5], crop_size=(300, 300), use_video=False,
                          video_format='.mp4', check_video=False, save_flag=True, filename=None,
-                         column_list=None, dataframe=None):
+                         column_list=None, dataframe=None, extra_columns=None):
     """ Happy aligning
     filename:   name root for the data
      """
@@ -372,6 +374,15 @@ def egocentric_alignment(config, pose_ref_index=[0, 5], crop_size=(300, 300), us
         egocentric_time_series, frames = alignment(path_to_file, file, pose_ref_index, video_format, crop_size, 
                                                    confidence, use_video=use_video, check_video=check_video,
                                                    column_list=column_list, dataframe=current_data)
+        if extra_columns is not None:
+            # normalize the extra columns
+            new_columns = current_data[extra_columns].to_numpy().T
+            # smooth
+            new_columns = medfilt(new_columns, 21)
+            # new_columns = (new_columns - new_columns.min())/(new_columns.max() - new_columns.min())
+            new_columns = sklearn.preprocessing.minmax_scale(new_columns)
+            egocentric_time_series = np.concatenate([egocentric_time_series, new_columns], axis=0)
+
         if save_flag:
             np.save(os.path.join(path_to_file, 'data', file, file+'-PE-seq.npy'), egocentric_time_series)
 #        np.save(os.path.join(path_to_file,'data/',file,"",file+'-PE-seq.npy', egocentric_time_series))

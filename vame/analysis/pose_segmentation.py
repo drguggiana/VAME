@@ -206,14 +206,15 @@ def pose_segmentation(config):
         else:
             files.append(all_flag)
     
-        use_gpu = torch.cuda.is_available()
-        if use_gpu:
-            print("Using CUDA")
-            print('GPU active:', torch.cuda.is_available())
-            print('GPU used:', torch.cuda.get_device_name(0))
-        else:
-            print("CUDA is not working! Attempting to use the CPU...")
-            torch.device("cpu")
+        # use_gpu = torch.cuda.is_available()
+        # if use_gpu:
+        #     print("Using CUDA")
+        #     print('GPU active:', torch.cuda.is_available())
+        #     print('GPU used:', torch.cuda.get_device_name(0))
+        # else:
+        use_gpu = False
+        print("CUDA is not working! Attempting to use the CPU...")
+        torch.device("cpu")
         
         if not os.path.exists(os.path.join(cfg['project_path'], "results", file,
                                            model_name, 'kmeans-'+str(n_cluster), "")):
